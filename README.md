@@ -7,4 +7,5 @@
 そのうち、Go の中の人のスライドの輪読や、めぼしいモジュールやプロダクトのコードリーディング、 Go のソース、みんなで同じ課題に取り組んでレビュー会などなど、研究に値するものに手を広めていきたい所存。
 
 参加は、[connpass](http://connpass.com/series/353/)からお願いします。
+
 過去のGo研究のまとめは[ここ](https://github.com/goken/goken/blob/master/index.md)から見れます。
