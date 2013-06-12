@@ -253,7 +253,7 @@ channel の for-range は、 channel が close するまで継続して読み込
 表示されて、 subscribe に関する groutine はちゃんと閉じられてることがわかる。
 
 
-全体: http://play.golang.org/p/jEm8Pt-nH9
+全体: http://play.golang.org/p/jEm8Pt-nH9 [feedreader.go](https://github.com/goken/goken/blob/master/goken03/feedreader.go)
 
 ## #15
 
@@ -660,6 +660,11 @@ maxPending を満たさない場合は、これを nil channel にしてしま�
 
 ## #38
 
+fetcher.Fetch() はネットワーク I/O で外部サーバと話しているのでブロックする。
+これを非同期にしたい。
+goroutine に移して、終了を検知する必要がある。
+select を追加すればいい。
+
 ```
         case <-startFetch:
             var fetched []Item
@@ -678,13 +683,20 @@ maxPending を満たさない場合は、これを nil channel にしてしま�
 
 ## #39
 
+fetch した結果を格納するための型を導入。
+
 ```go
 type fetchResult struct{ fetched []Item; next time.Time; err error }
 ```
 
+fetch が終わっていることを知るための channel を作る
+
 ```go
     var fetchDone chan fetchResult // if non-nil, Fetch is running
 ```
+
+fetchDone が nil だったら fetch をスケジュールする。
+これが初期値。
 
 ```go
         var startFetch <-chan time.Time
@@ -692,6 +704,13 @@ type fetchResult struct{ fetched []Item; next time.Time; err error }
             startFetch = time.After(fetchDelay) // enable fetch case
         }
 ```
+
+case では fetchDone を設定して fetch が走る。
+goroutine が走って fetchDone に結果を送る。
+fetch が走ってる間も loop はブロックせず、
+終わったら fetchDone の読み取り case で
+結果を取得する。
+
 
 ```go
         select {
@@ -721,3 +740,22 @@ Go makes it easier
 - goroutines serialize access to local mutable state
 - stack traces & deadlock detector
 - race detector
+
+
+## Q & A
+
+1. Goroutine の leak を発見するツールとか方法はあるか？
+
+ここでは stack trace を出す基本的な方法をやった、実行中に leak を発見するのは難しい。
+Go1.1 で Blocking profiles がある。何がブロックしてるのかを graph 取得できる?
+
+2. 今回の 3 つのエラーなどに当たらないで書くあめの何かが Go の言語にはあるか？
+静的解析ツールは？
+
+race detector とかあるけど、あとは経験が必要な部分もある。
+ツールはもう少し良くして行きたいけど、 race が一番でかいので、 race detector 大きいと思う。
+3. appendgine go でもツール使えるの？ gae go はどうデバッグするの？
+それは次のセッションで
+
+4. あとで
+
