@@ -299,7 +299,7 @@ Subscription を実装。
 ```go
 // 読み取り専用の channle を返すだけなので楽
 func (s *sub) Updates() <-chan Item{
-　    return s.updates
+    return s.updates
 }
 
 // 終了処理とエラー報告
