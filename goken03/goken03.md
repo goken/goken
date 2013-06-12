@@ -4,6 +4,12 @@ Go研 vol.3 まとめ
 ##参加者
 
 - [Jxck](https://twitter.com/Jxck_)
+- [tenntenn](https://twitter.com/tenntenn)
+- [manji0112](https://twitter.com/manji0112)
+- [hogedigo](https://twitter.com/hogedigo)
+- [yssk22](https://twitter.com/yssk22)
+- [ronkorving](https://twitter.com/ronkorving)
+- [qubyte](https://twitter.com/qubyte)
 
 ## 今回の概要
 
