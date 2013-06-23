@@ -21,6 +21,10 @@ Go研 vol.3 まとめ
 
 ## 資料
 
+まとめをブログに書きました。
+- http://d.hatena.ne.jp/Jxck/20130623/1371999576
+
+
 - [youtube] https://www.youtube.com/watch?v=QDDwwePbDtw
 - [slide] http://talks.golang.org/2013/advconc.slide
 
