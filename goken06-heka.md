@@ -129,7 +129,8 @@ import (
 
 `globals` が持ってるのはグローバル設定の情報だけ
 
-```pipeline/pipeline_runner.go
+pipeline/pipeline_runner.go:
+```go
 // Struct for holding global pipeline config values.
 type GlobalConfigStruct struct {
 	PoolSize            int
@@ -157,7 +158,8 @@ func DefaultGlobals() (globals *GlobalConfigStruct) {
 
 ### PipelineConfig
 
-```pipeline/config.go
+pipeline/config.go:
+```go
 // Master config object encapsulating the entire heka/pipeline configuration.
 type PipelineConfig struct {
 	// All running InputRunners, by name.
@@ -176,7 +178,8 @@ NewPipelineConfig() も、殆どからの PipelineConfig を作るだけ。
 
 ### PipelineConfig.LoadFromConfigFile
 
-```pipeline/config.go
+pipeline/config.go:
+```go
 // LoadFromConfigFile loads a TOML configuration file and stores the
 // result in the value pointed to by config. The maps in the config
 // will be initialized as needed.
@@ -188,7 +191,8 @@ func (self *PipelineConfig) LoadFromConfigFile(filename string) (err error) {
 
 各セクションに対して `self.loadSection` を呼んでいる.
 
-```pipeline/config.go
+pipeline/config.go:
+```go
 // loadSection must be passed a plugin name and the config for that plugin. It
 // will create a PluginWrapper (i.e. a factory). For decoders we store the
 // PluginWrappers and create pools of DecoderRunners for each type, stored in
@@ -206,13 +210,15 @@ func (self *PipelineConfig) loadSection(sectionName string,
 これは1メッセージを格納して pipeline に入るデータ構造.
 2種類の pool で再利用される.
 
-```pipeline/pipeline_runner.go
+pipeline/pipeline_runner.go
+```go
 // Main Heka pipeline data structure containing raw message data, a Message
 // object, and other Heka related message metadata.
 type PipelinePack struct {
 ```
 
-```pipeline/pipeline_runner.go
+pipeline/pipeline_runner.go:
+```go
 // Main function driving Heka execution. Loads config, initializes
 // PipelinePack pools, and starts all the runners. Then it listens for signals
 // and drives the shutdown process when that is triggered.
@@ -234,7 +240,8 @@ router, InputRunner を起動する.
 
 メインの goroutine はシグナル待ちに入る.
 
-```pipeline/pipeline_runner.go
+pipeline/pipeline_runner.go:
+```go
 	// wait for sigint
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGHUP, SIGUSR1)
 
@@ -267,7 +274,8 @@ globals.Stopping になったら、 Inut, decoder, filter, output の順にシ�
 
 DecoderRunner は inChan から受け取った PipelinePack を decode し、 router に渡す.
 
-```pipeline/decoders.go
+pipeline/decoders.go:
+```go
 		for pack = range dr.inChan {
 			if err = dr.Decoder().Decode(pack); err != nil {
 				dr.LogError(err)
@@ -281,7 +289,7 @@ DecoderRunner は inChan から受け取った PipelinePack を decode し、 ro
 
 デコーダは、PipelinePack.MsgBytes をデコードして PipelinePack.Message に格納する.
 
-```
+```go
 func (self *JsonDecoder) Decode(pack *PipelinePack) error {
 	return json.Unmarshal(pack.MsgBytes, pack.Message)
 }
@@ -294,7 +302,8 @@ func (self *ProtobufDecoder) Decode(pack *PipelinePack) error {
 
 参照カウントをインクリメントしながら matcher.inChan に投げまくり. あと放置.
 
-```pipeline/router.go
+pipeline/router.go:
+```go
 			case pack, ok = <-self.inChan:
 				if !ok {
 					break
@@ -329,7 +338,8 @@ FilterRunner と OutputRunner の両方の interface を実装したのが foRun
 matcher があれば起動し、 inChan で受け取る。
 matcher の実態は MatchRunner で、 Pipeline.loadSection で作られてる.
 
-```pipeline/config.go
+pipeline/config.go:
+```go
 	if pluginGlobals.Matcher != "" {
 		if matcher, err = NewMatchRunner(pluginGlobals.Matcher,
 			pluginGlobals.Signer); err != nil {
@@ -356,4 +366,4 @@ Channel を簡単にメッセージキューに使ってる。
 ちょっと goroutine + channel 使い過ぎでは?
 特に MatchRunner のところ, match したら関数呼び出すだけで良いんじゃないか。
 
-# vim: syntax=markdown
+<!-- vim: syntax=markdown -->
