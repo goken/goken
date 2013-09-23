@@ -47,6 +47,8 @@ err := json.Unmarshal(jsonStr, &hoge)
 
 `Value`型は以下のように定義(コメントは省略)されている。
 
+https://code.google.com/p/go/source/browse/src/pkg/reflect/value.go#61
+
 ```src/pkg/reflect/value.go#61
 type Value struct {
     typ *rtype
@@ -73,6 +75,8 @@ type Value struct {
 
 なお、`flag`型は以下のように定義されている。
 ビット操作の為のマスクやシフト幅などが`iota`を使ってうまく行なわれている。
+
+https://code.google.com/p/go/source/browse/src/pkg/reflect/value.go#96
 
 ```src/pkg/reflect/value.go#96
 type flag uintptr
