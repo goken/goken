@@ -30,6 +30,7 @@ err := json.Unmarshal(jsonStr, &hoge)
 
 リフレクションのパターンには以下のようなものがあり、以降でそれぞれ説明する。
 
+* 出力引数として`interface{}`を受け取るパターン
 * `struct`のリフレクションパターン
 * `channel`のリフレクションパターン
 * `func`のリフレクションパターン
@@ -74,7 +75,7 @@ type Value struct {
     * この部分についてはよくわからない
 
 なお、`flag`型は以下のように定義されている。
-ビット操作の為のマスクやシフト幅などが`iota`を使ってうまく行なわれている。
+ビット操作の為のマスクやシフト幅などが`iota`を使ってうまく行なわれている([参考](http://qiita.com/tenntenn/items/0a3af58b225eeae29088))。
 
 https://code.google.com/p/go/source/browse/src/pkg/reflect/value.go#96
 
@@ -198,3 +199,113 @@ t2 := reflect.TypeOf(100)
 * [`func MapOf(key, elem Type) Type`](http://golang.org/pkg/reflect/#MapOf)
 * [`func PtrTo(t Type) Type`](http://golang.org/pkg/reflect/#PtrTo)
 * [`func SliceOf(t Type) Type`](http://golang.org/pkg/reflect/#SliceOf)
+
+## 出力引数として`interface{}`を受け取る
+
+### リフレクションを使って、変数に値を設定する
+
+よく考えれば当たり前だが、一度ポインタにしないと変数の値を変えることができない。
+
+http://play.golang.org/p/grX4uYh2VO
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+func main() {
+    n := 100
+
+    // ダメ
+    nv := reflect.ValueOf(n)
+    fmt.Println(nv.CanSet())
+
+    // ポインタを使う
+    npv := reflect.ValueOf(&n)
+    fmt.Println(npv.Elem().CanSet())
+    npv.Elem().SetInt(200)
+
+    fmt.Println(n)
+}
+```
+
+`Elem`メソッドの実装を見てみる。
+
+https://code.google.com/p/go/source/browse/src/pkg/reflect/value.go#780
+
+```
+fl := v.flag&flagRO | flagIndir | flagAddr
+```
+
+まず、`flagRO`で論理積をとっているので、元の`v`のフラグのうち、`flagRO`の値だけ利用している。
+つまり、元の`v`が読込み限定だった場合は、`v.Elem()`で取得したものも読込み限定となる。
+次に、`flagIndir`と`flagAddr`が論理和で追加されている。
+ここでこれらのフラグを付けている理由は、`CanSet`の実装を見るとわかる。
+
+https://code.google.com/p/go/source/browse/src/pkg/reflect/value.go#330
+
+```
+func (v Value) CanSet() bool {
+        return v.flag&(flagAddr|flagRO) == flagAddr
+}
+```
+
+`CanSet`が`true`を返すためには、`flagRO`が立っておらず、`flagAddr`が立っている必要がある。
+つまり、`Elem`で取得した値は`flagAddr`が立っているため、読込み限定でなければ、`Set`を使って値を設定できる。
+
+一方で、`ValueOf`などで取得したものは、`ValueOf`の実装を見ると、`flagAddr`が立っていないことが分かる。
+
+https://code.google.com/p/go/source/browse/src/pkg/reflect/value.go#2129
+
+```
+if typ.size > ptrSize {
+    fl |= flagIndir
+}
+```
+
+### ポインタを`interface{}`型で引数に受け取る
+
+利用側がキャストをせずに、任意の型の値を生成したい場合がある。
+Javaなどでは、ジェネリクスを使って、設定する値の型を指定することで、実現できる。
+Go言語には、ジェネリクスがないため、出力引数として、`interface{}`型でポインタを受け取り、設定するパターンがある。
+ここで気をつけたいのは、`interface{}`型で受け取ると、想定しているポインタ型ではないものが渡される可能性があるということだ。
+`Kind`メソッドなどを使って、型のチェックを行なうと良いだろう。
+
+http://play.golang.org/p/qsTwrL11mu
+
+```reflect_pattern1.go
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+func set(p, v interface{}) error {
+    pv := reflect.ValueOf(p)
+    if pv.Kind() != reflect.Ptr {
+        return fmt.Errorf("p must be pointer.")
+    }
+
+    vv := reflect.ValueOf(v)
+    if pv.Elem().Kind() != vv.Kind() {
+        return fmt.Errorf("p type and v type do not mutch")
+    }
+
+    pv.Elem().Set(vv)
+
+    return nil
+}
+
+func main() {
+    var hoge int
+    fmt.Println(hoge)
+    set(&hoge, 100)
+    fmt.Println(hoge)
+    fmt.Println(set(&hoge, 10.4))
+}
+
+```
