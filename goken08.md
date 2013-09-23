@@ -110,6 +110,7 @@ http://golang.org/pkg/reflect/#Kind
 ### `Type`型
 
 `Type`型は、型を表すインタフェースで、以下のように定義されている。
+メソッドやフィールドの情報等が取得できるのが分かる。
 
 https://code.google.com/p/go/source/browse/src/pkg/reflect/type.go#31
 
@@ -128,97 +129,72 @@ type Type interface {
         Implements(u Type) bool
         AssignableTo(u Type) bool
         ConvertibleTo(u Type) bool
-
-        // Methods applicable only to some types, depending on Kind.
-        // The methods allowed for each kind are:
-        //
-        //      Int*, Uint*, Float*, Complex*: Bits
-        //      Array: Elem, Len
-        //      Chan: ChanDir, Elem
-        //      Func: In, NumIn, Out, NumOut, IsVariadic.
-        //      Map: Key, Elem
-        //      Ptr: Elem
-        //      Slice: Elem
-        //      Struct: Field, FieldByIndex, FieldByName, FieldByNameFunc, NumField
-
-        // Bits returns the size of the type in bits.
-        // It panics if the type's Kind is not one of the
-        // sized or unsized Int, Uint, Float, or Complex kinds.
         Bits() int
-
-        // ChanDir returns a channel type's direction.
-        // It panics if the type's Kind is not Chan.
         ChanDir() ChanDir
-
-        // IsVariadic returns true if a function type's final input parameter
-        // is a "..." parameter.  If so, t.In(t.NumIn() - 1) returns the parameter's
-        // implicit actual type []T.
-        //
-        // For concreteness, if t represents func(x int, y ... float64), then
-        //
-        //      t.NumIn() == 2
-        //      t.In(0) is the reflect.Type for "int"
-        //      t.In(1) is the reflect.Type for "[]float64"
-        //      t.IsVariadic() == true
-        //
-        // IsVariadic panics if the type's Kind is not Func.
         IsVariadic() bool
-
-        // Elem returns a type's element type.
-        // It panics if the type's Kind is not Array, Chan, Map, Ptr, or Slice.
         Elem() Type
-
-        // Field returns a struct type's i'th field.
-        // It panics if the type's Kind is not Struct.
-        // It panics if i is not in the range [0, NumField()).
         Field(i int) StructField
-
-        // FieldByIndex returns the nested field corresponding
-        // to the index sequence.  It is equivalent to calling Field
-        // successively for each index i.
-        // It panics if the type's Kind is not Struct.
         FieldByIndex(index []int) StructField
-
-        // FieldByName returns the struct field with the given name
-        // and a boolean indicating if the field was found.
         FieldByName(name string) (StructField, bool)
-
-        // FieldByNameFunc returns the first struct field with a name
-        // that satisfies the match function and a boolean indicating if
-        // the field was found.
         FieldByNameFunc(match func(string) bool) (StructField, bool)
-
-        // In returns the type of a function type's i'th input parameter.
-        // It panics if the type's Kind is not Func.
-        // It panics if i is not in the range [0, NumIn()).
         In(i int) Type
-
-        // Key returns a map type's key type.
-        // It panics if the type's Kind is not Map.
         Key() Type
-
-        // Len returns an array type's length.
-        // It panics if the type's Kind is not Array.
         Len() int
-
-        // NumField returns a struct type's field count.
-        // It panics if the type's Kind is not Struct.
         NumField() int
-
-        // NumIn returns a function type's input parameter count.
-        // It panics if the type's Kind is not Func.
         NumIn() int
-
-        // NumOut returns a function type's output parameter count.
-        // It panics if the type's Kind is not Func.
         NumOut() int
-
-        // Out returns the type of a function type's i'th output parameter.
-        // It panics if the type's Kind is not Func.
-        // It panics if i is not in the range [0, NumOut()).
         Out(i int) Type
-
         common() *rtype
         uncommon() *uncommonType
 }
 ```
+
+上記の中の非公開メソッドの`common()`は`*rtype`という型の値を返している。
+この`rtype`という型が、`Type`インタフェースの実体であり、以下のように定義されている。
+共通部分はこの型で定義しているようだ。
+
+https://code.google.com/p/go/source/browse/src/pkg/reflect/type.go#243
+
+```src/pkg/reflect/type.go#243
+type rtype struct {
+        size          uintptr        // size in bytes
+        hash          uint32         // hash of type; avoids computation in hash tables
+        _             uint8          // unused/padding
+        align         uint8          // alignment of variable with this type
+        fieldAlign    uint8          // alignment of struct field with this type
+        kind          uint8          // enumeration for C
+        alg           *uintptr       // algorithm table (../runtime/runtime.h:/Alg)
+        gc            unsafe.Pointer // garbage collection data
+        string        *string        // string form; unnecessary but undeniably useful
+        *uncommonType                // (relatively) uncommon fields
+        ptrToThis     *rtype         // type for pointer to this type, if used in binary or has methods
+}
+```
+
+`uncommon()`は`*uncommonType`という型の値を返すが、`uncommonType`は以下のように定義されている。
+名前やメソッドがある場合のみこの型の値が保持されるようだ。
+
+https://code.google.com/p/go/source/browse/src/pkg/reflect/type.go#267
+
+```src/pkg/reflect/type.go#267
+type uncommonType struct {
+        name    *string  // name of type
+        pkgPath *string  // import path; nil for built-in types like int, string
+        methods []method // methods associated with type
+}
+```
+
+`Type`型は`Value.Type()`メソッドか`reflect.TypeOf`関数で取得できる。
+
+```
+v  := reflect.ValueOf(100)
+t  := v.Type()
+t2 := reflect.TypeOf(100)
+```
+
+それぞれの型のスライスやチャネルを作る関数がある。
+
+* [`func ChanOf(dir ChanDir, t Type) Type`](http://golang.org/pkg/reflect/#ChanOf)
+* [`func MapOf(key, elem Type) Type`](http://golang.org/pkg/reflect/#MapOf)
+* [`func PtrTo(t Type) Type`](http://golang.org/pkg/reflect/#PtrTo)
+* [`func SliceOf(t Type) Type`](http://golang.org/pkg/reflect/#SliceOf)
