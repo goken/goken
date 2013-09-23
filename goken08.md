@@ -200,7 +200,7 @@ t2 := reflect.TypeOf(100)
 * [`func PtrTo(t Type) Type`](http://golang.org/pkg/reflect/#PtrTo)
 * [`func SliceOf(t Type) Type`](http://golang.org/pkg/reflect/#SliceOf)
 
-## 出力引数として`interface{}`を受け取る
+## 出力引数として`interface{}`を受け取るパターン
 
 ### リフレクションを使って、変数に値を設定する
 
@@ -232,6 +232,8 @@ func main() {
 }
 ```
 
+ポインタの`Value`型の値を取得後、`Elem`でポインタの指す、実体の`Value`型の値を取得している。
+ちなみに、`reflect.Indirect`でもポインタの実体取得できる。
 `Elem`メソッドの実装を見てみる。
 
 https://code.google.com/p/go/source/browse/src/pkg/reflect/value.go#780
@@ -309,3 +311,159 @@ func main() {
 }
 
 ```
+
+## `struct`のリフレクションパターン
+### フィールド情報を取得する
+#### `Value`型から取得する
+
+`Value`型からフィールドに関する情報を取得するメソッドは以下の通りである。
+`Value`型からフィールド情報を取得すると、実際にその`struct`オブジェクトのフィールドに設定されている値が`Value`型で取得できる。
+
+* [`func (v Value) Field(i int) Value`](http://golang.org/pkg/reflect#Field)
+* [`func (v Value) FieldByIndex(index []int) Value`](http://golang.org/pkg/reflect#FieldByIndex)
+* [`func (v Value) FieldByName(name string) Value`](http://golang.org/pkg/reflect#FieldByName)
+* [`func (v Value) FieldByNameFunc(match func(string) bool) Value`](http://golang.org/pkg/reflect#FieldByNameFunc)
+
+http://play.golang.org/p/O7WIM9QArZ
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type MyStruct struct {
+    field1 string
+    field2 MyStruct2
+}
+
+type MyStruct2 struct {
+    field int
+}
+
+func main() {
+    ms := MyStruct{"str", MyStruct2{100}}
+    v := reflect.ValueOf(ms)
+
+    // ms.field1
+    fmt.Println(v.Field(0))
+
+    // ms.field2.field
+    fmt.Println(v.FieldByIndex([]int{1, 0}))
+
+    // ms.field1
+    fmt.Println(v.FieldByName("field1"))
+
+    fmt.Println(v.FieldByNameFunc(func(name string) bool {
+        return name == "field1"
+    }))
+}
+```
+
+値を設定するには、通常の変数と同様にフィールドを保持している構造体のポインタを使用する必要がある。
+また、フィールドが公開されていない場合(厳密には`PkgPath`に値が設定されていないフィールド)は、`flagRO`フラグがたつため、`CanSet`が`false`となり`Set`できない。
+
+http://play.golang.org/p/SSW28W5bXn
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type Hoge struct {
+    N int
+}
+
+func main() {
+    h := Hoge{10}
+    hpv := reflect.ValueOf(&h)
+    hpv.Elem().FieldByName("N").SetInt(200)
+
+    fmt.Println(h)
+}
+```
+
+#### `Type`型から取得する
+
+
+一方、`Type`型からフィールドの情報を取得するメソッドは以下の通りである。
+メソッド名や引数は`Value`型の場合と同じであるが、戻り値が`StructField`型になっている事に注意したい。
+`Type`型は型情報なので、当然ながら実際の値の情報ではなく型に関する情報を保持している。
+そのため、フィールドに関する型情報は`StructField`として定義している。
+
+* `Field(i int) StructField`
+* `FieldByIndex(index []int) StructField`
+* `FieldByName(name string) (StructField, bool)`
+* `FieldByNameFunc(match func(string) bool) (StructField, bool)`
+
+http://play.golang.org/p/XzlRBIEpJj
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type MyStruct struct {
+    field1 string
+    field2 MyStruct2
+}
+
+type MyStruct2 struct {
+    field int
+}
+
+func main() {
+    ms := MyStruct{"str", MyStruct2{100}}
+    t := reflect.TypeOf(ms)
+
+    // ms.field1
+    fmt.Println(t.Field(0))
+
+    // ms.field2.field
+    fmt.Println(t.FieldByIndex([]int{1, 0}))
+
+    // ms.field1
+    fmt.Println(t.FieldByName("field1"))
+
+    fmt.Println(t.FieldByNameFunc(func(name string) bool {
+        return name == "field1"
+    }))
+}
+```
+
+`StructField`型からフィールドに設定された、タグ情報を取得することができる。
+`encoding/json`パッケージなどでは、このようにタグを使用している。
+
+http://play.golang.org/p/xyCMeD5yuv
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type Hoge struct {
+    N int `json:"n"`
+}
+
+func main() {
+    h := Hoge{10}
+    t := reflect.TypeOf(h)
+    n, _ := t.FieldByName("N")
+    fmt.Println(n.Tag.Get("json"))
+}
+```
+
+### メソッド情報を取得する
+## `channel`のリフレクションパターン
+## `func`のリフレクションパターン
