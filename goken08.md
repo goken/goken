@@ -558,4 +558,106 @@ func main() {
 ```
 
 ## `channel`のリフレクションパターン
+
+### `channel`を作る
+`reflect.MakeChan`関数を使うと、任意の型のchannelを作ることができる。
+`Value`型にはchannel用のメソッドがありそれぞれの役割は以下のとおりである。
+
+* `Value.Send`: チャネルにデータを送る`ch<-100`
+* `Value.TrySend`: ブロックなしで、チャネルにデータを送る。送れなかったら戻り値が`false`
+* `Value.Recv`: チャネルからデータを受け取る`<-ch`
+* `Value.TryRecv`: ブロックなしで、チャネルからデータを受け取る。受け取れなかったら第2戻り値が`false`
+* `Value.Len`: バッファの中にある容量
+* `Value.Cap`: channelの容量
+
+http://play.golang.org/p/xWHNPSJTUH
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+func main() {
+    var ch chan int
+    c := reflect.MakeChan(reflect.TypeOf(ch), 0)
+    reflect.ValueOf(&ch).Elem().Set(c)
+
+    go func() {
+        ch <- 100
+    }()
+    fmt.Println(<-ch)
+}
+```
+
+また、任意の型をやりとりするチャネルの型を取得したい場合は、`reflect.ChanOf`が使える。
+
+http://play.golang.org/p/iqCeByVCoD
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+func main() {
+    ct := reflect.ChanOf(reflect.SendDir, reflect.TypeOf(1))
+    fmt.Println(ct)
+}
+```
+
+第1引数の`ChanDir`は方向を表すフラグで以下のように定義されている。
+
+```
+type ChanDir int
+const (
+        RecvDir ChanDir             = 1 << iota // <-chan
+        SendDir                                 // chan<-
+        BothDir = RecvDir | SendDir             // chan
+)
+```
+
+### `reflect.Select`を使う
+
+`reflect.Select`を使用すると、任意の個数のcaseからなるselect文を実行できる。
+`reflect.Select`関数は以下のように定義されて、引数に`Select`型のスライスを渡す。
+戻り値は、
+
+* `chosen`: 選んだcase
+* `recv`: channelから受けっとた値
+* `recvOK`: channelから受け取れたかどうか?（閉じてないか） 
+
+である。
+
+```
+func Select(cases []SelectCase) (chosen int, recv Value, recvOK bool)
+```
+
+`Select`型は、以下のように定義されている。
+
+```
+type SelectCase struct {
+        Dir  SelectDir // direction of case
+        Chan Value     // channel to use (for send or receive)
+        Send Value     // value to send (for send)
+}
+```
+
+`SelectDir`は以下のように定義されており、caseで使用するchannelの方向または`default`caseかどうかを表す。
+
+```
+type SelectDir int
+const (
+        SelectSend    // case Chan <- Send
+        SelectRecv    // case <-Chan:
+        SelectDefault // default
+)
+```
+
+https://github.com/golang-samples/reflect/blob/master/chan/main.go
+
 ## `func`のリフレクションパターン
