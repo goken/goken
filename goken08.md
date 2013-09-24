@@ -323,8 +323,9 @@ func main() {
 * [`func (v Value) FieldByIndex(index []int) Value`](http://golang.org/pkg/reflect#FieldByIndex)
 * [`func (v Value) FieldByName(name string) Value`](http://golang.org/pkg/reflect#FieldByName)
 * [`func (v Value) FieldByNameFunc(match func(string) bool) Value`](http://golang.org/pkg/reflect#FieldByNameFunc)
+* [`func (v Value) NumField() int`](http://golang.org/pkg/reflect#NumField)
 
-http://play.golang.org/p/O7WIM9QArZ
+http://play.golang.org/p/VF1zJOITSr
 
 ```
 package main
@@ -359,6 +360,8 @@ func main() {
     fmt.Println(v.FieldByNameFunc(func(name string) bool {
         return name == "field1"
     }))
+
+    fmt.Println(v.NumField())
 }
 ```
 
@@ -400,8 +403,9 @@ func main() {
 * `FieldByIndex(index []int) StructField`
 * `FieldByName(name string) (StructField, bool)`
 * `FieldByNameFunc(match func(string) bool) (StructField, bool)`
+* `NumField() int`
 
-http://play.golang.org/p/XzlRBIEpJj
+http://play.golang.org/p/EWOO-7Psza
 
 ```
 package main
@@ -436,6 +440,8 @@ func main() {
     fmt.Println(t.FieldByNameFunc(func(name string) bool {
         return name == "field1"
     }))
+
+    fmt.Println(t.NumField())
 }
 ```
 
@@ -465,5 +471,91 @@ func main() {
 ```
 
 ### メソッド情報を取得する
+#### `Value`型から取得する
+`Value`型からメソッドに関する情報を取得するメソッドは以下の通りである。
+`Value`型から取得した取得したメソッドは、`Value.Call`メソッドで呼び出すことができる。
+
+* [`func (v Value) Method(i int) Value`](http://golang.org/pkg/reflect/#Value.Method)
+* [`func (v Value) MethodByName(name string) Value`](http://golang.org/pkg/reflect/#Value.MethodByName)
+* [`func (v Value) NumMethod() int`](http://golang.org/pkg/reflect/#Value.NumMethod)
+
+http://play.golang.org/p/9vp1cvCSMW
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type MyStruct struct {
+    field1 string
+}
+
+func (ms *MyStruct) method1() {
+}
+
+func (ms *MyStruct) Method2() {
+    fmt.Println("method2!")
+}
+
+func main() {
+    ms := &MyStruct{"str"}
+    v := reflect.ValueOf(ms)
+
+    // ms.method1
+    fmt.Println(v.Method(0))
+
+    // ms.Method2
+    fmt.Println(v.MethodByName("Method2"))
+
+    fmt.Println(v.NumMethod())
+
+    v.MethodByName("Method2").Call([]reflect.Value{})
+}
+```
+
+#### `Type`型から取得する
+`Type`型からメソッドに関する情報を取得するメソッドは以下の通りである。
+
+* `Method(int) Method`
+* `MethodByName(string) (Method, bool)`
+* `NumMethod() int`
+
+http://play.golang.org/p/7mwSlX7YS_
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type MyStruct struct {
+    field1 string
+}
+
+func (ms *MyStruct) method1() {
+}
+
+func (ms *MyStruct) Method2() {
+}
+
+func main() {
+    ms := &MyStruct{"str"}
+    t := reflect.TypeOf(ms)
+
+    // ms.method1
+    fmt.Println(t.Method(0))
+
+    // ms.Method2
+    fmt.Println(t.MethodByName("Method2"))
+
+    fmt.Println(t.NumMethod())
+}
+```
+
 ## `channel`のリフレクションパターン
 ## `func`のリフレクションパターン
