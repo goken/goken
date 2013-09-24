@@ -200,6 +200,34 @@ t2 := reflect.TypeOf(100)
 * [`func PtrTo(t Type) Type`](http://golang.org/pkg/reflect/#PtrTo)
 * [`func SliceOf(t Type) Type`](http://golang.org/pkg/reflect/#SliceOf)
 
+ちなみに、`Tyape`型から`New`を使ってオブジェクトが作れる。
+
+http://play.golang.org/p/-kY7RBBLvr
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type MyStruct struct {
+    field1 string
+}
+
+func main() {
+    var msp *MyStruct
+    fmt.Println(msp)
+
+    msv := reflect.New(reflect.TypeOf(msp).Elem())
+    mspv := reflect.ValueOf(&msp)
+    mspv.Elem().Set(msv)
+
+    fmt.Println(msp)
+}
+```
+
 ## 出力引数として`interface{}`を受け取るパターン
 
 ### リフレクションを使って、変数に値を設定する
@@ -658,6 +686,118 @@ const (
 )
 ```
 
+チャネルの使い方をまとめたサンプル
+
 https://github.com/golang-samples/reflect/blob/master/chan/main.go
 
 ## `func`のリフレクションパターン
+
+### `func`をリフレクションする
+
+メソッドと同様`Value.Call`メソッドで呼び出すことができる。
+
+http://play.golang.org/p/0vsMpUNvOv
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+func main() {
+    f := func(n int) {
+        fmt.Println(n)
+    }
+    fv := reflect.ValueOf(f)
+    fmt.Println(fv)
+
+    fv.Call([]reflect.Value{reflect.ValueOf(100)})
+}
+```
+
+型情報からは、引数や戻り値について取得できる。
+
+* `Type.NumIn() int`: 引数の数
+* `Type.In(i int) Type`:  `i`番目の引数の型を取得する
+* `Type.NumOut() int`: 戻り値の数
+* `Type.Out(i int) Type`: `i`番目の戻り値の型を取得する
+
+http://play.golang.org/p/L290-TbjEu
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+func main() {
+    f := func(n int) {
+        fmt.Println(n)
+    }
+    ft := reflect.TypeOf(f)
+    fmt.Println(ft)
+
+    fmt.Println(ft.NumIn())
+    for i := 0; i < ft.NumIn(); i++ {
+        fmt.Println(ft.In(i))
+    }
+
+    fmt.Println(ft.NumOut())
+    for i := 0; i < ft.NumOut(); i++ {
+        fmt.Println(ft.Out(i))
+    }
+}
+```
+
+### 関数を作る
+
+`reflect.MakeFunc`関数を使えば、動的に関数を作ることができる。
+残念ながら、メソッドは動的には作れない。
+関数を作る手順は以下のとおりである。
+
+* `func(in []Value) []Value`型で関数を作る
+* `MakeFunc`を使って関数を型情報を渡し、`Value`型に変換する
+* 上記の変換の際に使用した型の変数に、`Value.Set`を使って設定する
+
+合成関数を作る例を以下に示す。
+
+http://play.golang.org/p/o5Vw9unsFL
+
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+func Compose(f, g, fptr interface{}) {
+    fv := reflect.ValueOf(f)
+    gv := reflect.ValueOf(g)
+
+    fgv := func(in []reflect.Value) []reflect.Value {
+        return gv.Call(fv.Call(in))
+    }
+
+    fn := reflect.ValueOf(fptr).Elem()
+
+    v := reflect.MakeFunc(fn.Type(), fgv)
+
+    fn.Set(v)
+}
+
+func main() {
+    square := func(x int) int {
+        return x * x
+    }
+
+    var fourthPow func(x int) int
+
+    Compose(square, square, &fourthPow)
+    fmt.Println(fourthPow(2))
+}
+```
