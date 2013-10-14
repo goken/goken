@@ -13,7 +13,7 @@
     - varintとは、その値に合わせてバイト列の長さの変わる整数値のこと（[仕様](https://developers.google.com/protocol-buffers/docs/encoding?hl=ja&csw=1): Protocol Buffer由来）
 
 ## `Read`と`Write`
-`binary`パッケージで主に使う関数は`Read`と`Write`である。ある値をバイト配列に変換する場合は、`Read`を使い、バイト配列から値に戻したい場合は`Write`を使う。`order`を指定することで、エンディアンの指定が出来る。
+`binary`パッケージで主に使う関数は`Read`と`Write`である。ある値をbyteスライスに変換する場合は、`Read`を使い、byteスライスから値に戻したい場合は`Write`を使う。`order`を指定することで、エンディアンの指定が出来る。
 
 ```go
 func Read(r io.Reader, order ByteOrder, data interface{}) error
@@ -31,7 +31,7 @@ func Write(w io.Writer, order ByteOrder, data interface{}) error
 `data`に渡すことが出来る型は、`Read`の場合、固定長の値へのポインタもしくは固定長の値から構成されるスライスである。`Write`の場合、それらに加えて固定長の値そのものを渡すことが出来る。`data`には、構造体も渡せるが固定長の方ではなくてはいけない。そのため、単体のスライスは扱えるにも関わらず、スライスを含んだ構造体は`binary`パッケージでは扱えないことに注意する必要がある。
 
 ## ByteOrderインターフェイス
-バイトオーダの変換を行う振る舞いが`ByteOrder`インターフェイスとして定義されている。符号無し整数をバイト配列に変換するメソッド(`PutUintXX([]byte, uintXX)`)、バイト配列を符号無し整数に変換するメソッド(`UintXX([]byte) uintXX`)をもつ。
+バイトオーダの変換を行う振る舞いが`ByteOrder`インターフェイスとして定義されている。符号無し整数をbyteスライスに変換するメソッド(`PutUintXX([]byte, uintXX)`)、byteスライスを符号無し整数に変換するメソッド(`UintXX([]byte) uintXX`)をもつ。
 
 ```go
 type ByteOrder interface {
@@ -142,9 +142,9 @@ func Write(w io.Writer, order ByteOrder, data interface{}) error {
 }
 ```
 
-整数型（符号付き、符号無しともに）および整数型のポインタは、型スイッチ文によって判断され`ByteOrder`インターフェイスを用いてバイト配列に変換される。それ以外の型の場合は、リフレクションを用いて得られる型情報を元にバイト配列に変換される。
+整数型（符号付き、符号無しともに）および整数型のポインタは、型スイッチ文によって判断され`ByteOrder`インターフェイスを用いてbyteスライスに変換される。それ以外の型の場合は、リフレクションを用いて得られる型情報を元にbyteスライスに変換される。
 
-`v := reflect.Indirect(reflect.ValueOf(data))`をすることで、値がポインタ型の場合はそのポインタが指し示す値の`reflect.Value`オブジェクトを得る。`dataSize(v)`で、値の長さを取得し、その長さ分のbyteスライスを生成し`encoder`で`reflect.Value`オブジェクトが示す値をバイト配列に変換する。
+`v := reflect.Indirect(reflect.ValueOf(data))`をすることで、値がポインタ型の場合はそのポインタが指し示す値の`reflect.Value`オブジェクトを得る。`dataSize(v)`で、値の長さを取得し、その長さ分のbyteスライスを生成し`encoder`で`reflect.Value`オブジェクトが示す値をbyteスライスに変換する。
 
 ```
 type coder struct {
@@ -231,7 +231,7 @@ func (e *encoder) value(v reflect.Value) {
 }
 ```
 
-数値型の場合は、`encoder`の対応するメソッド(`encoder.uint8()`など)を用いてバイト配列に変換される。配列およびスライスの場合は、各要素について`encoder.value()`が再帰的に呼び出される。
+数値型の場合は、`encoder`の対応するメソッド(`encoder.uint8()`など)を用いてbyteスライスに変換される。配列およびスライスの場合は、各要素について`encoder.value()`が再帰的に呼び出される。
 
 構造体型の場合は、フィールドによって動作が変わる。
 
