@@ -382,8 +382,28 @@ func (d *decoder) value(v reflect.Value) {
 - それ以外の場合（つまり、ブランクフィールドの場合）: 長さ分が読み飛ばされる
     - エクスポートされないフィールドがあるとpanicが発生: <http://play.golang.org/p/ccsVEYuKA5>
 
-## 手をつけられなかったところ
-Varint関連部分: [varint.go](http://golang.org/src/pkg/encoding/binary/varint.go)
+## Varint
+### どんなものか
+[仕様](https://developers.google.com/protocol-buffers/docs/encoding?hl=ja&csw=1)
+
+- 最後の1バイトを除いて、各バイトの最上位ビットは1
+    - 各バイトの最上位ビットが1ならば、後続のバイトが存在することを示す
+- 各バイトについて、最上位ビットの除いた7ビットを使って2の補数で表現
+- 数値の下位グループ(7ビット単位)が下位バイトになる様にエンコーディングする
+
+### 操作
+```go
+func Varint(buf []byte) (int64, int)
+func Uvarint(buf []byte) (uint64, int)
+
+func PutVarint(buf []byte, x int64) int
+func PutUvarint(buf []byte, x uint64) int
+
+func ReadVarint(r io.ByteReader) (int64, error)
+func ReadUvarint(r io.ByteReader) (uint64, error)
+```
+
+`Varint()`と`Uvarint`はbyteスライスから整数値を得るのに用いる。`PutVarint()`と`PutUvarint()`は整数値からbyteスライスを得るのに用いる。byteスライスからではなく、`io.ByteReader`を使いたい場合には、`ReadVarint()`もしくは`ReadUvarint()`を用いる。
 
 ## 参考情報
 - ドキュメント: <http://golang.org/pkg/encoding/binary/>
