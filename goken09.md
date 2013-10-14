@@ -146,7 +146,7 @@ func Write(w io.Writer, order ByteOrder, data interface{}) error {
 
 `v := reflect.Indirect(reflect.ValueOf(data))`をすることで、値がポインタ型の場合はそのポインタが指し示す値の`reflect.Value`オブジェクトを得る。`dataSize(v)`で、値の長さを取得し、その長さ分のbyteスライスを生成し`encoder`で`reflect.Value`オブジェクトが示す値をbyteスライスに変換する。
 
-```
+```go
 type coder struct {
 	order ByteOrder
 	buf   []byte
