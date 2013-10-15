@@ -56,11 +56,11 @@ var LittleEndian littleEndian
 <http://golang.org/src/pkg/encoding/binary/binary.go>
 
 ```go
-type bigEndian struct {}
+type bigEndian struct{}
 type littleEndian struct{}
 ```
 
-それらに対して`ByteOrder`インターフェイスのメソッドが定義されている。`Read()`および`Write()`に渡す`ByteOrder`は`BigEndian`もしくは`LittleEndian`を渡し、エンディアンの指定を行うのが普通である。変態的なエンディアン（ミドルエンディアンというがあるらしい: [Wikipedia](http://ja.wikipedia.org/wiki/%E3%82%A8%E3%83%B3%E3%83%87%E3%82%A3%E3%82%A2%E3%83%B3)）を使用する場面に遭遇しない限り、`BigEndian`もしくは`LittleEndian`で事足りる。
+それらに対して`ByteOrder`インターフェイスのメソッドが定義されている。`Read()`および`Write()`に渡す`ByteOrder`は`BigEndian`もしくは`LittleEndian`を渡し、エンディアンの指定を行う。変態的なエンディアン（ミドルエンディアンというがあるらしい: [Wikipedia](http://ja.wikipedia.org/wiki/%E3%82%A8%E3%83%B3%E3%83%87%E3%82%A3%E3%82%A2%E3%83%B3)）を使用する場面に遭遇しない限り、`BigEndian`もしくは`LittleEndian`で事足りる。
 
 ## コードを読む
 エンコード、デコードともに[Go研 vol.8](https://github.com/goken/goken/blob/master/goken08-reflect.md)で勉強した`reflect`パッケージが多用されている。
@@ -68,7 +68,7 @@ type littleEndian struct{}
 ### エンコードの仕組み
 [encoding/binary/binary.go](http://golang.org/src/pkg/encoding/binary/binary.go?s=5194:5258#L179)
 
-```
+```go
 func Write(w io.Writer, order ByteOrder, data interface{}) error {
 	// Fast path for basic types.
 	var b [8]byte
@@ -239,7 +239,7 @@ func (e *encoder) value(v reflect.Value) {
 - それ以外の場合（つまり、ブランクフィールドの場合）: 0でパディングされる
 
 - 疑問
-    - 数値型の場合、`v.Kind()`型スイッチした後、`v.Type().Kind()`しているが、得られる値が違うのか？
+    - 数値型の場合、`v.Kind()`で型スイッチした後、`v.Type().Kind()`しているが、得られる値が違うのか？
 
 ### デコードの仕組み
 [encoding/binary/binary.go](http://golang.org/src/pkg/encoding/binary/binary.go?s=3732:3795#L121)
