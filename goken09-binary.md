@@ -411,4 +411,3 @@ func ReadUvarint(r io.ByteReader) (uint64, error)
     - [binary.go](https://code.google.com/p/go/source/browse/src/pkg/encoding/binary/binary.go)
     - [varint.go](https://code.google.com/p/go/source/browse/src/pkg/encoding/binary/varint.go)
 
-## 
