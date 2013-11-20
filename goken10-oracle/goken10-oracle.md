@@ -159,6 +159,52 @@ callers_sample.go:11:7:         static function call from main.main
 ```
 
 ### `callgraph`
+
+#### 使用ファイル
+```callgraph_sample.go
+package main
+
+func a() {
+    b()
+}
+
+func b() {
+    c()
+}
+
+func c() {
+}
+
+func main() {
+    a()
+}
+```
+
+#### コマンドの例
+
+```
+% oracle -mode=callgraph -format=plain callgraph_sample.go 
+```
+
+#### 結果
+
+```
+-:
+Below is a call graph of the entire program.
+The numbered nodes form a spanning tree.
+Non-numbered nodes indicate back- or cross-edges to the node whose
+ number follows in parentheses.
+Some nodes may appear multiple times due to context-sensitive
+ treatment of some calls.
+
+-: 0    <root>
+-: 1        main.init
+callgraph_sample.go:14:6: 2         main.main
+callgraph_sample.go:3:6: 3              main.a
+callgraph_sample.go:7:6: 4                  main.b
+callgraph_sample.go:11:6: 5                     main.c
+```
+
 ### `callstack`
 ### `describe`
 ### `freevars`

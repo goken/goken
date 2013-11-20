@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 func a() {
 	b()
 }
@@ -13,11 +9,6 @@ func b() {
 }
 
 func c() {
-	d()
-}
-
-func d() {
-	fmt.Println("d")
 }
 
 func main() {
