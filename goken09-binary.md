@@ -1,4 +1,4 @@
-# Go研 Vol.8
+# Go研 Vol.9
 - 発表者: [@oshothebig](http://twitter.com/oshothebig/)
 
 ## encoding/binaryの概要
