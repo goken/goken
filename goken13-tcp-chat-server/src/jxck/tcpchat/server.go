@@ -64,6 +64,9 @@ func (s *Server) RemoveClient() (dissconnect chan *Client) {
 			for i, v := range s.clients {
 				if v == client {
 					err := client.Close()
+					if err != nil {
+						log.Println(err)
+					}
 					copy(s.clients[i:], s.clients[i+1:])
 					s.clients[len(s.clients)-1] = nil // GC
 					s.clients = s.clients[:len(s.clients)-1]
