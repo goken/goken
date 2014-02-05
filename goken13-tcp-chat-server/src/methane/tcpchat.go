@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"sync"
 )
 
@@ -36,7 +37,7 @@ func NewRoom() *Room {
 	go func() { // broadcast
 		for {
 			msg := <-room.recvCh
-			text := fmt.Sprintf("%s: %s", msg.sender, msg.message)
+			text := fmt.Sprintf("%v: %v\n", msg.sender, msg.message)
 			fmt.Println(text)
 			room.Lock()
 			for _, c := range room.clients {
@@ -54,6 +55,9 @@ func NewRoom() *Room {
 
 func (room *Room) Join(conn net.Conn) {
 	client := NewClient(conn, room)
+	if client == nil {
+		return
+	}
 	room.Lock()
 	room.clients[client.name] = client
 	room.Unlock()
@@ -76,9 +80,10 @@ func NewClient(c net.Conn, room *Room) *Client {
 	c.Write([]byte("Your name?> "))
 	name, err := reader.ReadString('\n')
 	if err != nil {
+		log.Printf("%#v\n", err)
 		return nil
 	}
-	name = name[:len(name)-1]
+	name = strings.TrimRight(name, "\r\n")
 	return &Client{
 		name:   name,
 		conn:   c,
@@ -118,7 +123,7 @@ func (client *Client) Start(room *Room) {
 				room.Apart(client.name)
 				break
 			}
-			fmt.Println("name: ", client.name, " message: ", read)
+			read = strings.TrimRight(read, "\r\n")
 			room.recvCh <- &Message{sender: client.name, message: read}
 		}
 	}()
