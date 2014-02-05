@@ -34,7 +34,8 @@ func NewRoom() *Room {
 		recvCh:  make(chan *Message)}
 
 	go func() { // broadcast
-		for msg := range room.recvCh {
+		for {
+			msg := <-room.recvCh
 			text := fmt.Sprintf("%s: %s", msg.sender, msg.message)
 			fmt.Println(text)
 			room.Lock()
@@ -74,10 +75,10 @@ func NewClient(c net.Conn, room *Room) *Client {
 	reader := bufio.NewReader(c)
 	c.Write([]byte("Your name?> "))
 	name, err := reader.ReadString('\n')
-	name = name[:len(name)-1]
 	if err != nil {
 		return nil
 	}
+	name = name[:len(name)-1]
 	return &Client{
 		name:   name,
 		conn:   c,
@@ -86,7 +87,7 @@ func NewClient(c net.Conn, room *Room) *Client {
 }
 
 func (client *Client) Start(room *Room) {
-	go func() {
+	go func() { // sender
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Println(r)
@@ -100,12 +101,12 @@ func (client *Client) Start(room *Room) {
 			}
 			_, err := client.conn.Write([]byte(msg))
 			if err != nil {
-				return
+				return // todo どうやって receiver 止める？
 			}
 		}
 	}()
 
-	go func() {
+	go func() { // receiver
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Println(r)
@@ -117,6 +118,7 @@ func (client *Client) Start(room *Room) {
 				room.Apart(client.name)
 				break
 			}
+			fmt.Println("name: ", client.name, " message: ", read)
 			room.recvCh <- &Message{sender: client.name, message: read}
 		}
 	}()
