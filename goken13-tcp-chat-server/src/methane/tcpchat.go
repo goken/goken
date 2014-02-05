@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net"
@@ -15,31 +16,29 @@ type Message struct {
 }
 
 type Client struct {
-	Name string
-	ch   chan string
+	name   string
+	conn   net.Conn
+	reader *bufio.Reader
+	ch     chan string
 }
 
 type Room struct {
 	sync.Mutex
 	clients map[string]*Client
-	recvCh  chan Message
+	recvCh  chan *Message
 }
 
 func NewRoom() *Room {
 	room := &Room{
 		clients: make(map[string]*Client),
-		recvCh:  make(chan Message)}
+		recvCh:  make(chan *Message)}
 
 	go func() { // broadcast
 		for msg := range room.recvCh {
-			fmt.Println(msg)
-			text := fmt.Sprintf("%s: %s\n", msg.sender, msg.message)
+			text := fmt.Sprintf("%s: %s", msg.sender, msg.message)
+			fmt.Println(text)
 			room.Lock()
-			for name, c := range room.clients {
-				if name == msg.sender {
-					continue
-				}
-				fmt.Println("Sending to", c)
+			for _, c := range room.clients {
 				select {
 				case c.ch <- text:
 				default:
@@ -53,10 +52,12 @@ func NewRoom() *Room {
 }
 
 func (room *Room) Join(conn net.Conn) {
-	room.Lock()
-	defer room.Unlock()
 	client := NewClient(conn, room)
-	room.clients[client.Name] = client
+	room.Lock()
+	room.clients[client.name] = client
+	room.Unlock()
+	fmt.Println("joined: ", client.name)
+	client.Start(room)
 }
 
 func (room *Room) Apart(name string) {
@@ -70,18 +71,34 @@ func (room *Room) Apart(name string) {
 }
 
 func NewClient(c net.Conn, room *Room) *Client {
-	client := &Client{
-		Name: c.RemoteAddr().String(),
-		ch:   make(chan string, BUFSIZE)}
+	reader := bufio.NewReader(c)
+	c.Write([]byte("Your name?> "))
+	name, err := reader.ReadString('\n')
+	name = name[:len(name)-1]
+	if err != nil {
+		return nil
+	}
+	return &Client{
+		name:   name,
+		conn:   c,
+		reader: reader,
+		ch:     make(chan string, BUFSIZE)}
+}
 
+func (client *Client) Start(room *Room) {
 	go func() {
-		defer c.Close()
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println(r)
+			}
+		}()
+		defer client.conn.Close()
 		for {
 			msg, ok := <-client.ch
 			if !ok {
 				return
 			}
-			_, err := c.Write([]byte(msg))
+			_, err := client.conn.Write([]byte(msg))
 			if err != nil {
 				return
 			}
@@ -89,18 +106,20 @@ func NewClient(c net.Conn, room *Room) *Client {
 	}()
 
 	go func() {
-		buf := make([]byte, 4096)
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println(r)
+			}
+		}()
 		for {
-			size, err := c.Read(buf)
+			read, err := client.reader.ReadString('\n')
 			if err != nil {
-				room.Apart(client.Name)
+				room.Apart(client.name)
 				break
 			}
-			room.recvCh <- Message{client.Name, string(buf[:size])}
+			room.recvCh <- &Message{sender: client.name, message: read}
 		}
 	}()
-
-	return client
 }
 
 func (client *Client) Send(msg string) bool {
@@ -126,6 +145,6 @@ func main() {
 		if err != nil {
 			log.Panic(err)
 		}
-		room.Join(conn)
+		go room.Join(conn)
 	}
 }
