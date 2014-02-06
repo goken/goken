@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"sync"
 )
 
@@ -40,7 +41,7 @@ func NewRoom() *Room {
 	go func() { // broadcast
 		for {
 			msg := <-room.recvCh
-			text := fmt.Sprintf("%s: %s", msg.sender, msg.message)
+			text := fmt.Sprintf("%v: %v\n", msg.sender, msg.message)
 			fmt.Println(text)
 			room.Lock()
 			// broadcast 中に room から離脱とかあるとマズイので
@@ -62,6 +63,9 @@ func NewRoom() *Room {
 
 func (room *Room) Join(conn net.Conn) {
 	client := NewClient(conn, room)
+	if client == nil {
+		return
+	}
 
 	// room.clients は map であり、スレッドセーフではないので
 	// ここでロックを取る。
@@ -71,7 +75,8 @@ func (room *Room) Join(conn net.Conn) {
 	room.Unlock()
 
 	// client を追加してからループを回すようにする。
-	// 理由は .............................?
+	// room.clients に追加される前にループを開始すると、ログインと
+	// 同時に送られたメッセージを自分に返せなくなるから。
 	fmt.Println("joined: ", client.name)
 	client.Start(room)
 }
@@ -95,16 +100,16 @@ func NewClient(c net.Conn, room *Room) *Client {
 	c.Write([]byte("Your name?> "))
 	name, err := reader.ReadString('\n')
 	if err != nil {
+		log.Printf("%#v\n", err)
 		return nil
 	}
-	log.Printf("name: %q\n", name)
-	name = name[:len(name)-2] // len(name) - 1 だと \r になって消えてるっぽい
+	name = strings.TrimRight(name, "\r\n")
 	return &Client{
 		name:   name,
 		conn:   c,
 		reader: reader,
-		ch:     make(chan string, BUFSIZE)} // BUFSIZE までの chan にしておく
-	// TODO: こうやって書くのは末尾のカンマを無くしたいから？
+		ch:     make(chan string, BUFSIZE), // BUFSIZE までの chan にしておく
+	}
 }
 
 func (client *Client) Start(room *Room) {
@@ -147,25 +152,10 @@ func (client *Client) Start(room *Room) {
 				room.Apart(client.name)
 				break
 			}
-			fmt.Printf("name: %q\nmessage: %q\n", client.name, read)
-			message := &Message{
-				sender:  client.name,
-				message: read,
-			}
-			room.recvCh <- message
+			read = strings.TrimRight(read, "\r\n")
+			room.recvCh <- &Message{sender: client.name, message: read}
 		}
 	}()
-}
-
-// TODO: これ使ってる？
-func (client *Client) Send(msg string) bool {
-	select {
-	case client.ch <- msg:
-		return true
-	default:
-		close(client.ch)
-		return false
-	}
 }
 
 func main() {
