@@ -51,7 +51,9 @@ func NewRoom() *Room {
 				// これによりクライアントの遅延により全体に影響することがない。
 				select {
 				case c.ch <- text:
-				default: // TODO: default はなんで必要なんだっけ？
+				default:
+					// 空の default が無いと、 c.ch が埋まった時に書き込み可能になるまで
+					// ブロックするが、これがあれば select を抜ける
 				}
 			}
 			room.Unlock()
