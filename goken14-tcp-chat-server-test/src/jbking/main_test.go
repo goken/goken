@@ -17,6 +17,20 @@ func (client *TestClient) Channel() chan<- Message {
 	return client.c
 }
 
+func (client *TestClient) Join(Room) {
+	panic("Not implemented")
+}
+
+func TestRoomType(t *testing.T) {
+	room := &SimpleRoom{
+		nil,
+		nil,
+		nil,
+	}
+	// Type check
+	_ = Room(room)
+}
+
 func TestDistribute(t *testing.T) {
 	room := &SimpleRoom{
 		make(chan Client),
