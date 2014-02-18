@@ -16,12 +16,13 @@ import (
 
 type NetClient struct {
 	con net.Conn
-	c   chan<- Message
+	c   chan Message
 }
 
 type Client interface {
 	Id() string
 	Channel() chan<- Message
+	Join(Room)
 }
 
 type Room interface {
@@ -60,23 +61,20 @@ func (room *SimpleRoom) Message(msg Message) {
 	room.msgchan <- msg
 }
 
-func handle(con net.Conn, room Room) {
-	c := make(chan Message, MAX_MSG_BUF)
-	client := NetClient{con, c}
-
+func (client *NetClient) Join(room Room) {
 	io.WriteString(client.con, "> ")
 	go func() {
 		defer client.con.Close()
-		for s := range c {
+		for s := range client.c {
 			if _, err := io.WriteString(client.con, string(s)); err != nil {
-				room.DeleteClient(&client)
+				room.DeleteClient(client)
 				return
 			}
 			io.WriteString(client.con, "> ")
 		}
 	}()
 
-	room.AddClient(&client)
+	room.AddClient(client)
 
 	buf := bufio.NewReader(client.con)
 	for {
@@ -109,6 +107,12 @@ func (room *SimpleRoom) distribute() {
 	}
 }
 
+func NewClient(conn net.Conn) NetClient {
+	c := make(chan Message, MAX_MSG_BUF)
+	client := NetClient{conn, c}
+	return client
+}
+
 func main() {
 	port := ":8080"
 	if len(os.Args) > 1 {
@@ -133,6 +137,7 @@ func main() {
 			continue
 		}
 
-		go handle(conn, &room)
+		client := NewClient(conn)
+		go client.Join(&room)
 	}
 }
