@@ -35,23 +35,42 @@ func (s *Server) Join(client *Client) {
 	fmt.Printf("join new client: %v, totla: %d\n", client.Id, len(s.Clients))
 }
 
-func (s *Server) Serve(port string) {
+func (s *Server) Listen(port string) {
 	listener, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal(err)
 	}
 	s.Listener = listener
 	fmt.Printf("server starts at port %s\n", port)
+}
+
+func (s *Server) Accept() error {
+	conn, err := s.Listener.Accept()
+	if err != nil {
+		return err
+	}
+	id := <-s.NextId
+	client := NewClient(id, conn, s.BroadCastChan, s.LeaveChan)
+	s.Join(client)
+	return nil
+}
+
+func (s *Server) AcceptLoop() {
+	fmt.Printf("start accept loop\n")
 	for {
-		conn, err := s.Listener.Accept()
+		err := s.Accept()
 		if err != nil {
-			log.Println(err)
+			if err.Error() == "use of closed network connection" {
+				break
+			}
 			continue
 		}
-		id := <-s.NextId
-		client := NewClient(id, conn, s.BroadCastChan, s.LeaveChan)
-		s.Join(client)
 	}
+}
+
+func (s *Server) ListenAndAcceptLoop(port string) {
+	s.Listen(port)
+	s.AcceptLoop()
 }
 
 func (s *Server) BroadCast(message string) {
@@ -68,20 +87,24 @@ func (s *Server) BroadCastLoop() {
 	}
 }
 
+func (s *Server) Leave(client *Client) {
+	fmt.Printf("leave: %v\n", client.Id)
+	for i, c := range s.Clients {
+		if c == client {
+			copy(s.Clients[i:], s.Clients[i+1:])
+			length := len(s.Clients) - 1
+			s.Clients[length] = nil
+			s.Clients = s.Clients[:length]
+		}
+	}
+	fmt.Printf("clients %+v\n", s.Clients)
+	fmt.Printf("joining client %d\n", len(s.Clients))
+}
+
 func (s *Server) LeaveLoop() {
 	fmt.Printf("start leave loop\n")
 	for client := range s.LeaveChan {
-		fmt.Printf("leave: %v\n", client.Id)
-		for i, c := range s.Clients {
-			if c == client {
-				copy(s.Clients[i:], s.Clients[i+1:])
-				length := len(s.Clients) - 1
-				s.Clients[length] = nil
-				s.Clients = s.Clients[:length]
-			}
-		}
-		fmt.Printf("clients %+v\n", s.Clients)
-		fmt.Printf("joining client %d\n", len(s.Clients))
+		s.Leave(client)
 	}
 }
 
@@ -110,6 +133,7 @@ func (s *Server) Close() error {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("close connection %v\n", c)
 	}
 	return nil
 }

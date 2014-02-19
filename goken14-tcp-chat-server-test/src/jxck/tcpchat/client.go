@@ -32,30 +32,54 @@ func NewClient(id int, conn io.ReadWriteCloser, broadCastChan chan string, leave
 	return client
 }
 
+func (c *Client) Read(br *bufio.Reader) error {
+	message, err := br.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	fmt.Printf("send message from client: %q\n", message)
+	c.BroadCastChan <- message
+	return nil
+}
+
 func (c *Client) ReadLoop() {
 	br := bufio.NewReader(c.Conn)
 	for {
-		message, err := br.ReadString('\n')
+		err := c.Read(br)
 		if err != nil {
 			if err == io.EOF {
 				c.LeaveChan <- c
 				c.Conn.Close()
 				break
 			}
-			log.Println(err)
+			if err.Error() == "use of closed network connection" {
+				break
+			}
 			continue
 		}
-		fmt.Printf("send message from client: %q\n", message)
-		c.BroadCastChan <- message
 	}
+}
+
+func (c *Client) Write(bw *bufio.Writer, message string) (err error) {
+	fmt.Printf("send message to client: %q\n", message)
+	_, err = bw.WriteString(message)
+	if err != nil {
+		return err
+	}
+	err = bw.Flush()
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 func (c *Client) WriteLoop() {
 	bw := bufio.NewWriter(c.Conn)
 	for message := range c.WriteChan {
-		fmt.Printf("send message to client: %q\n", message)
-		bw.WriteString(message)
-		bw.Flush()
+		err := c.Write(bw, message)
+		if err != nil {
+			continue
+		}
 	}
 }
 

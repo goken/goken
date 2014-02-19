@@ -11,5 +11,5 @@ func init() {
 
 func main() {
 	server := chat.NewServer()
-	server.Serve(":3000")
+	server.ListenAndAcceptLoop(":3000")
 }

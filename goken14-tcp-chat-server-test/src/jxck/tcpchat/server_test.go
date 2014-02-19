@@ -3,30 +3,28 @@ package chat
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 	"testing"
-	"time"
 )
 
-func TestServer(t *testing.T) {
-	port := ":3000"
-	done := make(chan bool)
-	go func() {
-		server := NewServer()
-		server.Serve(port)
-		<-done
-		server.Close()
-	}()
+var port string = ":3000"
 
-	time.Sleep(time.Second)
+func init() {
+	log.SetFlags(log.Lshortfile)
+}
+
+func TestServer(t *testing.T) {
+	server := NewServer()
+	server.Listen(port)
+	go server.AcceptLoop()
+	defer server.Close()
 
 	expected := "test\r\n"
 
 	conn, _ := net.Dial("tcp", port)
 	fmt.Fprintf(conn, expected)
 	actual, _ := bufio.NewReader(conn).ReadString('\n')
-
-	close(done)
 
 	t.Logf("%q, %q", actual, expected)
 	if actual != expected {
@@ -35,27 +33,23 @@ func TestServer(t *testing.T) {
 }
 
 func TestMultiClient(t *testing.T) {
-	port := ":3001"
-	done := make(chan bool)
-	go func() {
-		server := NewServer()
-		defer server.Close()
-		server.Serve(port)
-		<-done
-	}()
-
-	time.Sleep(time.Second)
+	server := NewServer()
+	server.Listen(port)
+	go server.AcceptLoop()
+	defer server.Close()
 
 	expected := "test\r\n"
 
 	conn1, _ := net.Dial("tcp", port)
 	conn2, _ := net.Dial("tcp", port)
 
-	fmt.Fprintf(conn1, expected)
-	actual1, _ := bufio.NewReader(conn1).ReadString('\n')
-	actual2, _ := bufio.NewReader(conn2).ReadString('\n')
+	buf1 := bufio.NewReader(conn1)
+	buf2 := bufio.NewReader(conn2)
 
-	close(done)
+	fmt.Fprintf(conn1, expected)
+
+	actual1, _ := buf1.ReadString('\n')
+	actual2, _ := buf2.ReadString('\n')
 
 	t.Logf("%q, %q", actual1, actual2)
 	if actual1 != actual2 {
@@ -108,8 +102,10 @@ func TestLeave(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	t.Skip()
 	server := NewServer()
+	server.Listen(port)
+	go server.AcceptLoop()
+
 	client1 := &Client{Id: 1, Conn: new(rwcMock)}
 	client2 := &Client{Id: 2, Conn: new(rwcMock)}
 	client3 := &Client{Id: 3, Conn: new(rwcMock)}
@@ -123,6 +119,8 @@ func TestClose(t *testing.T) {
 	server.Close()
 
 	for _, c := range []*Client{client1, client2, client3, client4} {
-		t.Log(c.Conn.(*rwcMock))
+		if c.Conn.(*rwcMock).Closed != true {
+			t.Errorf("fail to close client connection %v", c)
+		}
 	}
 }
