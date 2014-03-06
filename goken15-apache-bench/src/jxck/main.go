@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 var (
 	n int64
 	c int
+	url string
 )
 
 func init() {
@@ -18,13 +20,14 @@ func init() {
 	flag.Int64Var(&n, "n", 1, "number of requests")
 	flag.IntVar(&c, "c", 1, "number of clients")
 	flag.Parse()
+	url = os.Args[len(os.Args)-1]
 }
 
 func main() {
 	start := time.Now()
 	var i int64
 	for i = 0; i < n; i++ {
-		resp, err := http.Get("http://localhost:3000/")
+		resp, err := http.Get(url)
 		if err != nil {
 			log.Println(resp, err)
 		}
