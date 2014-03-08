@@ -59,14 +59,14 @@ func main() {
 
 	wg.Wait()
 	total := time.Since(start)
-	avg := (float64(total.Nanoseconds()) / float64(n)) / (1000 * 1000)
-	rps := (float64(n) / float64(total.Nanoseconds())) * (1000 * 1000)
+	avg := total.Seconds() / float64(n) * 1000
+	rps := (float64(n) / total.Seconds())
 	log.Println(rps)
 
 	format := `
-total time: %.4f [s]
-average time: %.4f [ms]
-req per sec: %.4f [#/sec]
+total time: %.3f [s]
+average time: %.3f [ms]
+req per sec: %.3f [#/sec]
 `
 
 	fmt.Printf(format, total.Seconds(), avg, rps)
