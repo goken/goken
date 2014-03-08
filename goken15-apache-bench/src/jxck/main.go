@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -17,6 +18,7 @@ var (
 )
 
 func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	log.SetFlags(log.Lshortfile)
 	flag.IntVar(&n, "n", 1, "number of requests")
 	flag.IntVar(&c, "c", 1, "number of clients")
@@ -46,22 +48,22 @@ func main() {
 	start := time.Now()
 	for i := 0; i < c; i++ {
 		wg.Add(1)
-		go func() {
+		go func(j int) {
 			for _ = range s {
 				resp, err := http.Get(url)
 				if err != nil {
 					log.Println(resp, err)
 				}
+				resp.Body.Close()
 			}
 			wg.Done()
-		}()
+		}(i)
 	}
 
 	wg.Wait()
 	total := time.Since(start)
 	avg := total.Seconds() / float64(n) * 1000
 	rps := (float64(n) / total.Seconds())
-	log.Println(rps)
 
 	format := `
 total time: %.3f [s]
