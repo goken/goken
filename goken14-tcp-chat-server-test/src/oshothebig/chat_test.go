@@ -219,11 +219,12 @@ func TestClientWriteWhenEOFOccurs(t *testing.T) {
 	leave := make(chan membership)
 	sut := NewClient(conn, incoming, outgoing, leave)
 
-	var err error
+	errch := make(chan error)
 	go func() {
-		err = sut.Write()
+		errch <- sut.Write()
 	}()
 	incoming <- expected
+	err := <-errch
 
 	if err != io.EOF {
 		t.Errorf("actual: %v, expected: %v\n", err, io.EOF)
