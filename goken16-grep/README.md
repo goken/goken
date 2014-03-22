@@ -1,4 +1,4 @@
-# Goken vol.15
+# Goken vol.16
 
 ## 課題
 
@@ -16,7 +16,7 @@ grep clone
 
 ## 仕様
 
-```
+```sh
 $ go run grep.go mattn CONTRIBUTORS
 Yasuhiro Matsumoto <mattn.jp@gmail.com>
 ```
@@ -46,6 +46,7 @@ Mac 64bit 用バイナリを吐いて入れておいて下さい。
 (当日だれかのマシンで全員のものを流して比較します)
 
 ```sh
+# test.sh
 for i in `seq 1 1000`
 do
   ./goken-grep mattn CONTRIBUTORS 1>/dev/null 2>/dev/null
