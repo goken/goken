@@ -1,25 +1,21 @@
 package main
 
 import (
-    //"strings"
-    "os"
-    "io"
-    "fmt"
-    "bufio"
+ "os"
+ "io"
+ "fmt"
+ "bufio"
+ "strings"
 )
 
 func scanLine(line string, word string) int {
-    return 0
+ index := strings.Index(line, word)
+ return index
 }
 
 // http://tkotobu.cocolog-nifty.com/blog/2011/09/golang-7819.html
 
 func main() {
- // --- trial ----
- //fmt.Printf("args count=%d\n", os.Args.length); //NG
- //fmt.Printf("args count=%d\n", len(os.Args)); // OK
- //fmt.Println(os.Args[1]) // OK
-
  // --- check args ---
  argCount := len(os.Args)
  if argCount < 3 {
@@ -27,18 +23,17 @@ func main() {
   return
  }
 
- fmt.Println(os.Args[1])
- fmt.Println(os.Args[2])
-
  // -- read file --
- //var err os.Error
- //var inFile *os.File
+ var err error
+ var inFile *os.File
  var reader *bufio.Reader
  var flag bool
 
- inFile,err := os.Open(os.Args[2])
+ word := os.Args[1]
+ filename := os.Args[2]
+ inFile,err = os.Open(filename)
  if err != nil {
-  fmt.Printf("Cannot open file: %s\n", os.Args[2])
+  fmt.Printf("Cannot open file: %s\n", filename)
   return
  }
  reader = bufio.NewReaderSize(inFile, 4096)
@@ -58,7 +53,10 @@ func main() {
    return
   }
 
-  fmt.Println(string(line))
+  //fmt.Println(string(line))
+  if scanLine(string(line), word) >= 0 {
+   fmt.Println(string(line))
+  }
  }
 }
 
