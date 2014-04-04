@@ -1,4 +1,5 @@
 hogedigo   ./test.sh  1.41s user 2.89s system 79% cpu 5.383 total
+hogedigo2  ./test.sh  1.32s user 2.66s system 80% cpu 4.950 total
 jxck       ./test.sh  4.50s user 5.65s system 143% cpu 7.096 total
 manji0112  ./test.sh  4.61s user 5.68s system 137% cpu 7.472 total
 massie_g   ./test.sh  1.27s user 2.51s system 81% cpu 4.659 total
