@@ -6,11 +6,33 @@ ORM
 
 ## 仕様
 
-TODO: ORM を作る。
+ORM を作る。
 
 ## 観点
 
-TODO: あとで
+ORM のクエリビルダの部分だけ作る。
+DSL を Go でやったらどうなるか？
+
+こんなの
+
+```
+db.select("username").from("users").where("id = 1")
+// "select username from users where id = 1"
+```
+
+
+## 仕様
+
+- DSL から、 SQL(ANSI 99 準拠) を生成
+- 結果として、 SQL 文字列を返す
+- 対応する文(select, update,,,)、句(where, groupby,,,)は任意
+- プレースホルダ対応すること(where id=? とか)
+- サンプルを用意すること(最低限以下のテーブルに対する CRUD)
+
+```
+users (id number, name varchar, age number, email varchar)
+```
+
 
 ## 共通
 
