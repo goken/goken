@@ -19,7 +19,7 @@ func structfmt(v reflect.Value) (str string) {
 		sf := typ.Field(i)
 		fv := v.Field(i)
 		str += "    "
-		str += fmt.Sprintf("%s:\t%s", sf.Name, format(fv))
+		str += fmt.Sprintf("\t%s:\t%s", sf.Name, format(fv))
 		str += "\n"
 	}
 	str += "}\n"
@@ -34,12 +34,32 @@ func intfmt(v reflect.Value) string {
 	return fmt.Sprintf("%d(%s)", v.Int(), v.Type().String())
 }
 
+func boolfmt(v reflect.Value) string {
+	return fmt.Sprintf("%t(%s)", v.Bool(), v.Type().String())
+}
+
+func slicefmt(v reflect.Value) string {
+	length := v.Len()
+	slice := v.Slice(0, length)
+
+	str := "["
+	for i := 0; i < length; i += 1 {
+		str = fmt.Sprintf("%s%v, ", str, format(slice.Index(i)))
+	}
+	str += "\b\b]"
+	return fmt.Sprintf("%v(%s[%d])", str, v.Type().String(), length)
+}
+
 func format(v reflect.Value) string {
 	switch v.Kind() {
 	case reflect.Int:
 		return intfmt(v)
 	case reflect.String:
 		return strfmt(v)
+	case reflect.Bool:
+		return boolfmt(v)
+	case reflect.Slice:
+		return slicefmt(v)
 	case reflect.Struct:
 		return structfmt(v)
 	}
