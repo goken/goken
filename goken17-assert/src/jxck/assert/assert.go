@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -15,19 +16,24 @@ func structfmt(v reflect.Value) (str string) {
 	typ := v.Type()
 	nf := typ.NumField()
 	str += "\n{\n"
+
+	inner := "\t"
 	for i := 0; i < nf; i++ {
 		sf := typ.Field(i)
 		fv := v.Field(i)
-		str += "    "
-		str += fmt.Sprintf("\t%s:\t%s", sf.Name, format(fv))
-		str += "\n"
+		inner += fmt.Sprintf("%s:\t%s", sf.Name, format(fv))
+		inner += "\n"
 	}
+	inner = strings.Replace(inner, "\n", "\n\t", -1)
+	inner = strings.TrimSuffix(inner, "\t")
+	str += inner
+
 	str += "}\n"
 	return str
 }
 
 func strfmt(v reflect.Value) string {
-	return fmt.Sprintf("%s(%s)", v.String(), v.Type().String())
+	return fmt.Sprintf("%q(%s)", v.String(), v.Type().String())
 }
 
 func intfmt(v reflect.Value) string {
@@ -74,8 +80,8 @@ func Equal(t *testing.T, actual, expected interface{}) {
 		ev := reflect.ValueOf(expected)
 
 		message := "\n"
-		message += fmt.Sprintf("actual  : %s\n", format(av))
-		message += fmt.Sprintf("expected: %s\n", format(ev))
+		message += fmt.Sprintf("[actual]  :%s\n", format(av))
+		message += fmt.Sprintf("[expected]:%s\n", format(ev))
 		t.Error(message)
 	}
 }
