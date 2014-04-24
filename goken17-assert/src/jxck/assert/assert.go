@@ -19,10 +19,9 @@ func structfmt(v reflect.Value) (str string) {
 
 	inner := "\t"
 	for i := 0; i < nf; i++ {
-		sf := typ.Field(i)
+		tf := typ.Field(i)
 		fv := v.Field(i)
-		inner += fmt.Sprintf("%s:\t%s", sf.Name, format(fv))
-		inner += "\n"
+		inner += fmt.Sprintf("%s:\t%s\n", tf.Name, format(fv))
 	}
 	inner = strings.Replace(inner, "\n", "\n\t", -1)
 	inner = strings.TrimSuffix(inner, "\t")
