@@ -3,7 +3,9 @@ package assert
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -71,6 +73,12 @@ func format(v reflect.Value) string {
 	return ""
 }
 
+func getInfo() string {
+		_, file, line, _ := runtime.Caller(2)
+		file = filepath.Base(file)
+		return fmt.Sprintf("%s:%d", file, line)
+}
+
 func Equal(t *testing.T, actual, expected interface{}) {
 	if reflect.DeepEqual(actual, expected) {
 		// Do Nothing while its went well.
@@ -79,8 +87,10 @@ func Equal(t *testing.T, actual, expected interface{}) {
 		ev := reflect.ValueOf(expected)
 
 		message := "\n"
+		message += getInfo() + "\n"
 		message += fmt.Sprintf("[actual]  :%s\n", format(av))
 		message += fmt.Sprintf("[expected]:%s\n", format(ev))
+
 		t.Error(message)
 	}
 }
