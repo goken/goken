@@ -1,2 +1,0 @@
-export GOPATH=`pwd`
-
