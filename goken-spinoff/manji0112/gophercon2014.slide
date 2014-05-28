@@ -1,0 +1,255 @@
+Go研spinoff
+Gophercon報告会
+28 Mar 2014
+Tags: gophercon, go, goken
+
+takafumi tsuchida
+@manji0112
+
+来年はみんなで行きましょう。
+
+* 自己紹介
+- twitter: @manji0112
+
+.link https://twitter.com/manji0112
+
+.image gophercon2014/twittericon.jpeg 300 300
+
+* Agenda
+
+- 前半
+Gopherconの様子紹介
+
+- 後半
+個人的に選んだベストプレゼン
+
+* Gophercon参加してきました!
+
+- 2014/4/24~26
+2日間のConference + Hack day
+
+.image gophercon2014/gopherconlogo.png
+
+* denver?
+
+.image gophercon2014/denvermap.jpg 500 800
+
+* denver市内1
+
+.image gophercon2014/denver1.jpg 500 400
+
+* denver市内2
+
+.image gophercon2014/denver2.jpg 500 400
+
+* ネズミかと思ったら... リスでした
+
+.image gophercon2014/denver3.jpg 500 400
+
+* ビールが有名
+
+.image gophercon2014/beer.jpeg 500 800
+
+* 有名な醸造所がたくさんあるらしい
+
+.image gophercon2014/rockbottom_exterior.jpg 500 800
+
+* Pre-Gophercon Party会場
+
+.image gophercon2014/preparty1.jpg 500 800
+
+* 会場の様子
+Denverの地ビール飲み放題でした!
+
+.image gophercon2014/preparty2.jpeg 500 800
+
+* LTの様子
+見れなかった...><
+
+.image gophercon2014/prepartylt.jpg 500 800
+
+* 会場の様子1
+ほとんど写真とってないので少しだけ。
+
+.image gophercon2014/entrance.jpg 500 400
+
+* 会場の様子2
+
+.image gophercon2014/stage.jpg 500 400
+
+* グッズ
+
+.image gophercon2014/goods.jpg 500 400
+
+* 朝ごはん
+Conference中は朝食、昼食付きでした
+
+.image gophercon2014/breakfast.jpg 500 400
+
+* Conference中の様子
+More than 700 gophers!!
+
+.image gophercon2014/crowd.jpg 500 800
+
+* 急遽、パネルディスカッションが始まったり
+
+.image gophercon2014/gophers.jpeg 500 800
+
+* プロモーションビデオ作ってきた人がいたり
+力作!!
+プレゼンと全然関係なかったw
+
+.link http://vimeo.com/92375131
+
+* 夜
+- 初日はWelcome party
+- 2日目はbrewery crawlなど
+
+Conference終了後もイベント目白押しでした
+※写真なし
+
+* 番外
+CoreOSカラーのバス
+
+.image gophercon2014/coreosbus.jpg 500 400
+
+* 2日間で28talks!!
+
+.iframe http://www.gophercon.com/speakers/ 600 1000
+
+* 全部見るのツラぽよ
+- 通しで見たら、丸一日かかる
+- 最低限見た方がいいのだけ、ピックアップしました
+
+* keynote
+
+- Q&Aがおもしろかった
+
+netchanとか色々なことを質問してた
+
+- 残念
+
+Q&Aでpackageのdependency managementについての質問
+
+Rob: 3rd partyで色々なことやってるからそっちを参照したら。
+
+* Best Practices for Production Environments
+
+SoundCloudのベスト・プラクティス紹介
+
+どれか一つだけ見るとしたらこれかな...
+
+* 開発環境
+
+1つのGOPATHに全てのプロジェクトを入れてる
+
+.code gophercon2014/devenv.sh
+
+以前は、独自に管理しようとしたこともあったが結局標準に従った
+
+* レポジトリ構成
+
+クライアント、サーバでそれぞれバイナリが必要なケース
+
+.code gophercon2014/ls.log
+
+* ログ、テスト
+
+どちらも結局標準パッケージを使っている
+
+- 標準logパッケージで必要な情報は事足りる
+
+- testingパッケージはシンプルだが、そんなに不満はない
+
+reflect.DeepEqualはデータ比較に便利
+
+- テストではtagsオプションをうまく使っている
+
+.code gophercon2014/test.sh
+
+* dependency management
+
+完全な解決作はないけど、go get -d かベンダリングで頑張る
+
+- ベンダリング?
+
+依存性のあるコードをプロジェクトのレポジトリに含めてしまう
+
+- 利用形態で2パターン
+
+binary -> _vendor -> 修飾付きGOPATHでビルド
+Library -> vendor -> importパス書き換え
+
+.code gophercon2014/makefile
+
+* その他
+
+- できるだけシンプルにする
+- 標準で用意されていれば、それに従う
+
+* Andrewも...
+
+Googleでも大体同じようなことやってるよ
+
+.image gophercon2014/andrewtweet.jpg 500 800
+
+* A Channel Compendium
+
+- ChannelのIdiom集
+nil channel、for-selectパターンとか
+
+- 既にchannelを使いこなしていれば目新しいものはない
+
+- channelの使い所の再確認に
+
+* Go from C to Go
+Go Compilerのself hosting話。
+
+- 既存のC codeをGoにConvertするtoolを作ってる
+
+- 1.4releaseをターゲットに作業してる
+そういえば、llvm-goは一足先にself hostingになりましたね。
+
+.link https://groups.google.com/forum/#!topic/llgo-dev/8uBfmIkGM88
+
+- ConverterはGo Compiler専用に最適化してる。(C to Goとして汎用的に使うのは難しいかも)
+
+- ConverterもOSSとして公開するかも
+
+* その他
+
+- mutant Go Compilers
+GopherJS, TardisGo, llgo, etc
+
+.link https://speakerdeck.com/elliott5/mutant-go-compilers-gophercon-2014-short-talk
+
+- GOBOT
+Goでデバイスを操作するためのlibrary
+色々なplatformに対応している(ARDrone, Arduino, Leap Motion,...)
+
+.link http://gobot.io/
+
+- GoCircuit
+Go研No.7でやりましたね。
+しばらくwatchしてなかったら大分変わってました
+
+.link https://github.com/gocircuit/circuit
+
+* 資料
+
+- Gophercon2014 Video
+
+.link http://confreaks.com/events/gophercon2014
+
+もう全部公開されてるはず
+
+- Gophercon2014 Slide
+
+.link https://github.com/gophercon/2014-talks
+
+- Gophercon2014まとめ
+
+.link http://gophercon.sourcegraph.com/
+
+英語不自由なので、ものすごく助かった
+

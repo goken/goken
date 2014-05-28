@@ -1,0 +1,18 @@
+github.com/soundcloud/complex/
+    README.md
+    Makefile
+    complex-server/
+        main.go
+        main_test.go
+        handlers.go
+        handlers_test.go
+    complex-worker/
+        main.go
+        main_test.go
+        process.go
+        process_test.go
+    shared/
+        foo.go
+        foo_test.go
+        bar.go
+        bar_test.go
