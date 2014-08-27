@@ -25,7 +25,7 @@ import (
 	usage: crawl [-d <depth>] [-o <output dir>] <url>
 	再帰クロールをgoroutineでパラレルにした。
 	redirect先チェック。
- */
+*/
 var attrNameMap map[string]string = map[string]string{"a": "href", "img": "src"}
 
 type Tree struct {
@@ -114,7 +114,7 @@ func _pcrawl(aUrl string, depth int, set *syncset) *Tree {
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if purl.Host != req.URL.Host || !set.put(req.URL.String()){
+			if purl.Host != req.URL.Host || !set.put(req.URL.String()) {
 				return errors.New("redirect ignored. url:" + req.URL.String())
 			}
 			return nil
@@ -160,8 +160,7 @@ func _pcrawl(aUrl string, depth int, set *syncset) *Tree {
 		}
 
 		if r.tag == "a" {
-			lpath := strings.ToLower(rurl.Path)
-			if !strings.HasSuffix(lpath, ".html") && !strings.HasSuffix(lpath, ".htm") && !strings.HasSuffix(lpath, "/") {
+			if !needsFetch(rurl.Path) {
 				continue
 			}
 			if depth <= 0 {
@@ -183,6 +182,27 @@ func _pcrawl(aUrl string, depth int, set *syncset) *Tree {
 	}
 
 	return &tree
+}
+
+func needsFetch(urlpath string) bool {
+	lpath := strings.ToLower(urlpath)
+	suffixes := []string{
+		".html",
+		".htm",
+		".png",
+		".jpg",
+		".jpeg",
+		".jpe",
+		".gif",
+		".tiff",
+		"/",
+	}
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(lpath, suffix) {
+			return true
+		}
+	}
+	return false
 }
 
 type resource struct {
