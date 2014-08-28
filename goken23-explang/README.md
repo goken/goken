@@ -6,10 +6,9 @@
 
 ## 仕様
 
-式言語を作る．
-http://en.wikipedia.org/wiki/Unified_Expression_Language
-JavaのOGNLやELなどのGo言語版を作る．
-templateパッケージのテンプレート内に書く式のような感じ．
+- 式言語を作る（http://en.wikipedia.org/wiki/Unified_Expression_Language）
+- JavaのOGNLやELなどのGo言語版
+- templateパッケージのテンプレート内に書く式のような感じ
 
 ## 共通
 
